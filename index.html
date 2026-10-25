@@ -31,6 +31,7 @@
     <div class="wrap nav__inner">
       <a class="nav__logo" href="#top" aria-label="Animesh Hedaoo, home">AH<span>.</span></a>
       <nav class="nav__links" id="nav-links" aria-label="Sections">
+        <a href="#journey">Journey</a>
         <a href="#about">About</a>
         <a href="#experience">Experience</a>
         <a href="#projects">Projects</a>
@@ -60,7 +61,7 @@
           <p class="lead">Mechanical engineer working where product development, production and software meet, from EV cooling components at Mahindra to reinforcement-learning robot control for my M.Sc. thesis.</p>
           <div class="hero__cta">
             <a class="btn btn--primary" href="mailto:animesh.hedaoo@gmail.com">Get in touch</a>
-            <a class="btn" href="#projects">See projects</a>
+            <a class="btn" href="#journey">Explore my journey</a>
             <a class="btn btn--ghost" href="https://github.com/An1me5h" target="_blank" rel="noopener">GitHub ↗</a>
           </div>
         </div>
@@ -73,10 +74,46 @@
       </div>
     </section>
 
+    <!-- Journey timeline (built by script.js from data.js) -->
+    <section class="section journey" id="journey">
+      <div class="wrap">
+        <header class="section__head"><span class="num">01</span><h2>Journey</h2></header>
+        <p class="section__intro">Education, work, projects and milestones on one line. Click anything to read more, or press play to walk through it.</p>
+
+        <div class="tl-bar">
+          <div class="chips" id="tl-filters" role="group" aria-label="Show on timeline">
+            <button type="button" class="chip" data-filter="all" aria-pressed="true">Everything</button>
+            <button type="button" class="chip" data-filter="education" aria-pressed="false">Education</button>
+            <button type="button" class="chip" data-filter="work" aria-pressed="false">Work</button>
+            <button type="button" class="chip" data-filter="project" aria-pressed="false">Projects</button>
+            <button type="button" class="chip" data-filter="milestone" aria-pressed="false">Milestones</button>
+          </div>
+          <div class="tl-player">
+            <button type="button" class="icon-btn" id="tl-prev" aria-label="Previous">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+            </button>
+            <button type="button" class="btn btn--primary tl-play" id="tl-play" aria-pressed="false">
+              <svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+              <svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>
+              <span>Play</span>
+            </button>
+            <button type="button" class="icon-btn" id="tl-next" aria-label="Next">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="tl" id="timeline" tabindex="0" aria-label="Timeline. Use the left and right arrow keys to move between items."></div>
+        <p class="tl-hint">Scroll sideways to see the whole timeline →</p>
+        <div class="tl-detail" id="tl-detail" aria-live="polite"></div>
+        <noscript><p class="section__intro">Turn on JavaScript to see the interactive timeline.</p></noscript>
+      </div>
+    </section>
+
     <!-- About -->
     <section class="section" id="about">
       <div class="wrap">
-        <header class="section__head"><span class="num">01</span><h2>About</h2></header>
+        <header class="section__head"><span class="num">02</span><h2>About</h2></header>
         <div class="about">
           <p class="about__quote">I want to understand a system down to the mechanism that makes it move, and when the tools around me fall short, I build my own.</p>
           <div class="about__body">
@@ -90,7 +127,7 @@
     <!-- Experience -->
     <section class="section" id="experience">
       <div class="wrap">
-        <header class="section__head"><span class="num">02</span><h2>Experience</h2></header>
+        <header class="section__head"><span class="num">03</span><h2>Experience</h2></header>
 
         <ol class="timeline">
           <li class="job reveal">
@@ -168,9 +205,9 @@
     <!-- Projects -->
     <section class="section" id="projects">
       <div class="wrap">
-        <header class="section__head"><span class="num">03</span><h2>Projects</h2></header>
+        <header class="section__head"><span class="num">04</span><h2>Projects</h2></header>
 
-        <article class="feature reveal">
+        <article class="feature reveal" id="thesis">
           <div class="feature__text">
             <p class="kicker">M.Sc. thesis · ongoing</p>
             <h3>Reinforcement-learning control of a robotic arm</h3>
@@ -185,41 +222,21 @@
           </aside>
         </article>
 
-        <div class="cards">
-          <article class="card reveal">
-            <p class="kicker">Personal project</p>
-            <h3>Supply Chain Network Visualizer</h3>
-            <p>An interactive map of supplier networks, logistics flows and dependencies, built on SAP-style data exports. It started because finding where stock actually sat meant digging through SAP every day. I also used it in my work at Mahindra.</p>
-            <ul class="tags"><li>JavaScript</li><li>Data viz</li><li>SAP data</li></ul>
-            <p class="card__links">
-              <a href="https://an1me5h.github.io/SupplyChain-visualizer/" target="_blank" rel="noopener">Live demo ↗</a>
-              <a href="https://github.com/An1me5h/SupplyChain-visualizer" target="_blank" rel="noopener">Code ↗</a>
-            </p>
-          </article>
-
-          <article class="card reveal">
-            <p class="kicker">Personal project</p>
-            <h3>Web data extraction &amp; automation</h3>
-            <p>A Python scraper (requests, BeautifulSoup) that detects how a site serves its data, whether public APIs, JSON-LD, sitemaps or pagination, then parses English and German pages into structured Excel. I pair it with an LLM agent workflow built on a verified knowledge base and human review.</p>
-            <ul class="tags"><li>Python</li><li>BeautifulSoup</li><li>LLM agents</li></ul>
-          </article>
-
-          <article class="card reveal">
-            <p class="kicker">B.E. thesis</p>
-            <h3>Wire Arc Additive Manufacturing</h3>
-            <p>“Strength assessment of parts manufactured by Wire Arc Additive Manufacturing.” I ran trials with a Yaskawa AR1440 6-axis robot on process parameters, deposition behaviour, bead geometry and defects.</p>
-            <ul class="tags"><li>Industrial robots</li><li>Additive manufacturing</li></ul>
-          </article>
-
-          <article class="card reveal">
-            <p class="kicker">SAE E-Baja</p>
-            <h3>FEM of rollcage &amp; suspension brackets</h3>
-            <p>Static and explicit ANSYS analysis (von Mises stress, deformation) used to trade weight against stiffness on the team's ATV.</p>
-            <ul class="tags"><li>ANSYS</li><li>FEM</li><li>Vehicle design</li></ul>
-          </article>
+        <div class="projects-bar">
+          <h3 class="sub sub--inline">Everything else I've built</h3>
+          <div class="chips" id="project-filters" role="group" aria-label="Filter projects">
+            <button type="button" class="chip" data-filter="all" aria-pressed="true">All</button>
+            <button type="button" class="chip" data-filter="engineering" aria-pressed="false">Engineering</button>
+            <button type="button" class="chip" data-filter="ai" aria-pressed="false">Simulation &amp; AI</button>
+            <button type="button" class="chip" data-filter="games" aria-pressed="false">Games</button>
+            <button type="button" class="chip" data-filter="software" aria-pressed="false">Software &amp; tools</button>
+            <button type="button" class="chip" data-filter="creative" aria-pressed="false">Creative</button>
+          </div>
         </div>
+        <div class="cards" id="project-grid"></div>
+        <noscript><p>Turn on JavaScript to see all projects, or browse them on <a href="https://github.com/An1me5h">GitHub</a>.</p></noscript>
 
-        <h3 class="sub">Patents &amp; publication</h3>
+        <h3 class="sub" id="patents">Patents &amp; publication</h3>
         <ul class="pubs">
           <li class="reveal"><span class="pubs__year">2021</span><div><strong>A Device for Generating Profiles on Pipes</strong><span>Indian Patent No. 484900 · Granted</span></div></li>
           <li class="reveal"><span class="pubs__year">2021</span><div><strong>A Device for Making Flower Garlands</strong><span>Indian Patent No. 414916 · Granted</span></div></li>
@@ -231,7 +248,7 @@
     <!-- Education -->
     <section class="section" id="education">
       <div class="wrap">
-        <header class="section__head"><span class="num">04</span><h2>Education</h2></header>
+        <header class="section__head"><span class="num">05</span><h2>Education</h2></header>
         <div class="edu">
           <article class="edu__item reveal">
             <p class="edu__date">2024 – 2027 (expected)</p>
@@ -258,7 +275,7 @@
     <!-- Skills -->
     <section class="section" id="skills">
       <div class="wrap">
-        <header class="section__head"><span class="num">05</span><h2>Skills &amp; tools</h2></header>
+        <header class="section__head"><span class="num">06</span><h2>Skills &amp; tools</h2></header>
         <div class="skills">
           <div class="skill reveal">
             <h3>Product development</h3>
@@ -292,7 +309,7 @@
     <!-- Contact -->
     <section class="section contact" id="contact">
       <div class="wrap">
-        <header class="section__head"><span class="num">06</span><h2>Contact</h2></header>
+        <header class="section__head"><span class="num">07</span><h2>Contact</h2></header>
         <p class="contact__lead">I'm always happy to talk about production engineering, EV components, or robots that learn.</p>
         <div class="contact__links">
           <a class="btn btn--primary" href="mailto:animesh.hedaoo@gmail.com">animesh.hedaoo@gmail.com</a>
@@ -310,6 +327,7 @@
     </div>
   </footer>
 
+  <script src="data.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
