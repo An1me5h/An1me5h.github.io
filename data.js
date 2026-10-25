@@ -226,12 +226,6 @@ window.ENTRIES = [
     tags: ['Kotlin', 'C#', 'Networking'],
     links: [{ label: 'Code', url: 'https://github.com/An1me5h/RemoteControl' }]
   },
-  {
-    id: 'scraper', short: 'Web data extraction', lane: 'software', start: '2026-09', end: '2026-10',
-    title: 'Web data extraction & automation',
-    text: 'A Python scraper (requests, BeautifulSoup) that detects how a site serves its data, whether public APIs, JSON-LD, sitemaps or pagination, then parses English and German pages into structured Excel. Paired with an LLM agent workflow built on a verified knowledge base and human review.',
-    tags: ['Python', 'BeautifulSoup', 'LLM agents']
-  },
 
   // ---------- Creative ----------
   {
