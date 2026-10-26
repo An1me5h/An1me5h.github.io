@@ -1,131 +1,310 @@
+var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function esc(text) {
+  return String(text).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+
 // Theme toggle: remembers the choice, otherwise follows the system setting
 (function () {
   var root = document.documentElement;
   var btn = document.getElementById('theme-toggle');
   var systemDark = window.matchMedia('(prefers-color-scheme: dark)');
 
-  function current() {
-    return root.getAttribute('data-theme') || (systemDark.matches ? 'dark' : 'light');
-  }
-
   btn.addEventListener('click', function () {
-    var next = current() === 'dark' ? 'light' : 'dark';
+    var current = root.getAttribute('data-theme') || (systemDark.matches ? 'dark' : 'light');
+    var next = current === 'dark' ? 'light' : 'dark';
     root.setAttribute('data-theme', next);
     try { localStorage.setItem('theme', next); } catch (e) {}
   });
 })();
 
-// Mobile menu
+// ---------- Intro <-> profile, with the name morphing into the page title ----------
 (function () {
-  var btn = document.getElementById('menu-toggle');
-  var links = document.getElementById('nav-links');
+  var body = document.body;
+  var profile = document.getElementById('profile');
+  var enterTimer = 0;
 
-  function setOpen(open) {
-    links.classList.toggle('open', open);
-    btn.setAttribute('aria-expanded', String(open));
-    btn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+  function playEntrance() {
+    profile.classList.remove('is-entering');
+    void profile.offsetWidth;
+    profile.classList.add('is-entering');
+    clearTimeout(enterTimer);
+    enterTimer = setTimeout(function () { profile.classList.remove('is-entering'); }, 2000);
   }
 
-  btn.addEventListener('click', function () {
-    setOpen(!links.classList.contains('open'));
+  function show(view, animate) {
+    if (body.getAttribute('data-view') === view) return;
+    function swap() {
+      body.setAttribute('data-view', view);
+      window.scrollTo(0, 0);
+      if (view === 'profile') playEntrance();
+    }
+    if (animate && document.startViewTransition && !reduceMotion) document.startViewTransition(swap);
+    else swap();
+  }
+
+  document.getElementById('enter').addEventListener('click', function (e) {
+    e.preventDefault();
+    history.pushState({ view: 'profile' }, '', '#profile');
+    show('profile', true);
   });
-  links.addEventListener('click', function (e) {
-    if (e.target.tagName === 'A') setOpen(false);
+
+  document.getElementById('replay').addEventListener('click', function () {
+    if (history.state && history.state.view === 'profile') {
+      history.back();
+    } else {
+      history.replaceState(null, '', location.pathname + location.search);
+      show('intro', true);
+    }
   });
+
+  window.addEventListener('popstate', function () {
+    show(location.hash === '#profile' ? 'profile' : 'intro', true);
+  });
+
+  // A shared link to #profile skips the intro
+  if (location.hash === '#profile') show('profile', false);
 })();
 
-// ---------- Shared helpers for the timeline and project cards ----------
-var Site = (function () {
-  var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  var laneById = {};
-  (window.LANES || []).forEach(function (lane) { laneById[lane.id] = lane; });
+// ---------- Tiles and their story sheets ----------
+var Tiles = (function () {
+  var sheet = document.getElementById('sheet');
+  var sheetBody = document.getElementById('sheet-body');
+  var tiles = window.TILES || [];
+  var byId = {};
+  tiles.forEach(function (t) { byId[t.id] = t; });
 
-  function esc(text) {
-    return String(text).replace(/[&<>"']/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-    });
+  var ICONS = {
+    robot: '<path d="M12 3v3M8 21v-3M16 21v-3"/><rect x="5" y="6" width="14" height="12" rx="3"/><circle cx="9.5" cy="11" r="1.2"/><circle cx="14.5" cy="11" r="1.2"/><path d="M9.5 15h5M2 11v3M22 11v3"/>',
+    gamepad: '<path d="M6 8h12a4 4 0 0 1 4 4v1.5a3.5 3.5 0 0 1-6.3 2.1L14.5 14h-5l-1.2 1.6A3.5 3.5 0 0 1 2 13.5V12a4 4 0 0 1 4-4z"/><path d="M7 11v3M5.5 12.5h3"/><circle cx="16" cy="11.5" r=".6"/><circle cx="18" cy="13.5" r=".6"/>',
+    atom: '<circle cx="12" cy="12" r="1.6"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/>',
+    code: '<path d="M8 8l-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14"/>',
+    camera: '<path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/>',
+    layers: '<path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/><path d="M3 17.5l9 5 9-5" opacity=".5"/>',
+    handshake: '<path d="M2 11l4-4 4 2 3-2 4 1 5 3"/><path d="M6 7v7l5 4c.8.6 1.8.6 2.5 0L19 14V9"/><path d="M10 14l2 1.5M12.5 12.5l2 1.5"/>',
+    scale: '<path d="M12 4v16M7 20h10M5 8h14"/><path d="M5 8l-3 6a3 3 0 0 0 6 0L5 8zM19 8l-3 6a3 3 0 0 0 6 0l-3-6z"/>',
+    chart: '<path d="M4 20V4M4 20h16"/><rect x="7" y="11" width="3" height="6" rx=".5"/><rect x="12" y="7" width="3" height="10" rx=".5"/><rect x="17" y="13" width="3" height="4" rx=".5"/>',
+    search: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="M20 20l-4.8-4.8M7.5 12l2-2.5 2 1.5 2-3"/>',
+    factory: '<path d="M3 20V10l5 3V10l5 3V10l5 3V5h3v15H3z"/><path d="M7 17h2M11 17h2M15 17h2"/>',
+    network: '<circle cx="5" cy="6" r="2.2"/><circle cx="19" cy="6" r="2.2"/><circle cx="12" cy="18" r="2.2"/><circle cx="12" cy="10" r="1.6"/><path d="M7 7l3.6 2.2M17 7l-3.6 2.2M12 11.6v4.2"/>'
+  };
+
+  function badgeHtml(t) {
+    if (t.icon) return '<span class="tile__icon"><svg viewBox="0 0 24 24" aria-hidden="true">' + ICONS[t.icon] + '</svg></span>';
+    var html = (t.logos || []).map(function (src) {
+      return '<span class="tile__logo"><img src="' + esc(src) + '" alt="" loading="lazy"></span>';
+    }).join('');
+    if (t.mono) html += '<span class="tile__mono" aria-hidden="true">' + esc(t.mono) + '</span>';
+    return '<span class="tile__logos">' + html + '</span>';
   }
 
-  // "2026-04" -> { y: 2026, m: 4 }; "now" -> this month
+  function tagsHtml(tags) {
+    if (!tags || !tags.length) return '';
+    return '<ul class="tags">' + tags.map(function (tag) { return '<li>' + esc(tag) + '</li>'; }).join('') + '</ul>';
+  }
+
+  function linksHtml(links) {
+    return (links || []).map(function (link) {
+      return '<a href="' + esc(link.url) + '" target="_blank" rel="noopener">' + esc(link.label) + ' ↗</a>';
+    }).join('');
+  }
+
+  // Build each section's tiles from data.js
+  document.querySelectorAll('.bento[data-group]').forEach(function (bento) {
+    var group = bento.getAttribute('data-group');
+    bento.innerHTML = tiles.filter(function (t) { return t.group === group; }).map(function (t) {
+      var cls = 'tile' + (t.span === 2 ? ' tile--span2' : '') + (t.tall ? ' tile--tall' : '');
+      var list = t.list ? '<span class="tile__list">' + t.list.map(function (item) { return '<span>' + esc(item) + '</span>'; }).join('') + '</span>' : '';
+      return '<button type="button" class="' + cls + '" data-open="' + t.id + '" data-color="' + t.color + '">' +
+        badgeHtml(t) +
+        '<span class="tile__kicker">' + esc(t.kicker) + '</span>' +
+        '<h3>' + esc(t.title) + '</h3>' +
+        '<span class="tile__teaser">' + esc(t.teaser) + '</span>' + list +
+        '<span class="tile__more">' + esc(t.more || 'Open') + ' →</span>' +
+      '</button>';
+    }).join('');
+  });
+
+  // Stagger the entrance animation down the page
+  document.querySelectorAll('#profile .tile').forEach(function (el, i) {
+    el.style.setProperty('--i', Math.min(i, 16));
+  });
+  document.getElementById('life').style.setProperty('--i', 17);
+
+  function open(id) {
+    var t = byId[id];
+    if (!t) return;
+    sheet.setAttribute('data-color', t.color);
+
+    var steps = t.story.map(function (step, i) {
+      var links = linksHtml(step.links);
+      if (step.open && byId[step.open]) {
+        links += '<button type="button" class="steps__open" data-open="' + step.open + '">' + esc(byId[step.open].title) + ' →</button>';
+      }
+      return '<li style="--i:' + i + '">' +
+        (step.when ? '<p class="steps__when">' + esc(step.when) + '</p>' : '') +
+        '<h3>' + esc(step.title) + '</h3>' +
+        (step.text ? '<p>' + esc(step.text) + '</p>' : '') +
+        tagsHtml(step.tags) +
+        (links ? '<div class="steps__links">' + links + '</div>' : '') +
+      '</li>';
+    }).join('');
+
+    var facts = t.facts ? '<dl class="facts">' + t.facts.map(function (f) {
+      return '<div><dt>' + esc(f.k) + '</dt><dd>' + esc(f.v) + '</dd></div>';
+    }).join('') + '</dl>' : '';
+    var footer = tagsHtml(t.tags) + (t.links ? '<div class="steps__links">' + linksHtml(t.links) + '</div>' : '');
+
+    sheetBody.innerHTML =
+      '<div class="sheet__head">' + badgeHtml(t) +
+        '<div><p class="sheet__kicker">' + esc(t.kicker) + '</p><h2 id="sheet-title">' + esc(t.title) + '</h2></div>' +
+      '</div>' + facts +
+      '<ol class="steps">' + steps + '</ol>' +
+      (footer ? '<div class="sheet__tags">' + footer + '</div>' : '');
+
+    if (!sheet.open) sheet.showModal();
+    sheet.scrollTop = 0;
+  }
+
+  document.addEventListener('click', function (e) {
+    var trigger = e.target.closest('[data-open]');
+    if (trigger) open(trigger.getAttribute('data-open'));
+  });
+  document.getElementById('sheet-close').addEventListener('click', function () { sheet.close(); });
+  // Click on the dimmed backdrop closes the sheet
+  sheet.addEventListener('click', function (e) { if (e.target === sheet) sheet.close(); });
+
+  return { open: open };
+})();
+
+// ---------- Life timeline: one line from 2000, coloured by era ----------
+(function () {
+  var data = window.TIMELINE;
+  var life = document.getElementById('life');
+  var view = document.getElementById('life-view');
+  var hint = document.getElementById('life-hint');
+  var backBtn = document.getElementById('life-back');
+  if (!data || !view) return;
+
+  var DRAW_SECONDS = 3.2;
+  var BASE_HEIGHT = 112;
+  var ROW = 26;
+  // Years before university are squeezed so the last decade gets most of the room
+  function yearWeight(y) { return y < 2018 ? 0.22 : 1; }
+
+  var START_YEAR = Number(data.start.slice(0, 4));
+
   function parse(value) {
     if (value === 'now') {
       var d = new Date();
       return { y: d.getFullYear(), m: d.getMonth() + 1 };
     }
-    var parts = value.split('-');
-    return { y: Number(parts[0]), m: Number(parts[1]) };
+    return { y: Number(value.slice(0, 4)), m: Number(value.slice(5, 7)) };
   }
 
-  function dateText(entry) {
-    if (entry.label) return entry.label;
-    var s = parse(entry.start);
-    var startText = MONTHS[s.m - 1] + ' ' + s.y;
-    if (!entry.end) return startText;
-    if (entry.end === 'now') return startText + ' – present';
-    var e = parse(entry.end);
-    if (e.y === s.y && e.m === s.m) return startText;
-    if (e.y === s.y) return MONTHS[s.m - 1] + ' – ' + MONTHS[e.m - 1] + ' ' + s.y;
-    return startText + ' – ' + MONTHS[e.m - 1] + ' ' + e.y;
-  }
-
-  function sortValue(value) {
+  // Distance from the start, in weighted years. `part` is how far into the month: 0 start, 0.5 middle, 1 end.
+  function units(value, part) {
     var d = parse(value);
-    return d.y * 12 + d.m;
+    var total = 0;
+    for (var y = START_YEAR; y < d.y; y++) total += yearWeight(y);
+    return total + yearWeight(d.y) * (d.m - 1 + part) / 12;
   }
+  var TOTAL = units(data.end, 1);
+  function pos(value, part) { return Math.max(0, Math.min(1, units(value, part || 0) / TOTAL)); }
+  function pct(f) { return (f * 100).toFixed(3) + '%'; }
 
-  function linksHtml(entry) {
-    return (entry.links || []).map(function (link) {
-      return '<a href="' + esc(link.url) + '" target="_blank" rel="noopener">' + esc(link.label) + ' ↗</a>';
-    }).join('');
-  }
+  var eras = data.eras;
+  var lastEra = eras[eras.length - 1];
+  var lineEnd = pos(lastEra.to, 1);
+  var nowPos = pos('now', 0.5);
+  var openEra = null;
 
-  function tagsHtml(entry) {
-    if (!entry.tags || !entry.tags.length) return '';
-    return '<ul class="tags">' + entry.tags.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>';
-  }
+  // ---- Build the overview ----
+  var html = '<div class="life__track" id="life-track">';
 
-  return {
-    lane: function (entry) { return laneById[entry.lane]; },
-    group: function (entry) { return laneById[entry.lane].group; },
-    hasCard: function (entry) { return laneById[entry.lane].group === 'project' && entry.card !== false; },
-    esc: esc, parse: parse, dateText: dateText, sortValue: sortValue,
-    linksHtml: linksHtml, tagsHtml: tagsHtml
-  };
-})();
-
-// ---------- Journey timeline ----------
-var Timeline = (function () {
-  var root = document.getElementById('timeline');
-  var detail = document.getElementById('tl-detail');
-  var playBtn = document.getElementById('tl-play');
-  if (!root || !window.ENTRIES) return null;
-
-  var FIRST_YEAR = 2018;
-  var LAST_YEAR = 2027;
-  var ROW = 30;
-  // Busy years get more room so their projects don't pile up on each other
-  var YEAR_WEIGHT = { 2018: 0.7, 2019: 0.8, 2020: 0.8, 2021: 1, 2022: 1.1, 2023: 0.9, 2024: 1.1, 2025: 1.4, 2026: 3.6, 2027: 0.7 };
-
-  var entries = window.ENTRIES.slice().sort(function (a, b) {
-    return Site.sortValue(a.start) - Site.sortValue(b.start);
+  var years = [];
+  for (var y = START_YEAR; y < 2018; y += 5) years.push(y);
+  for (var yy = 2018; yy <= Number(data.end.slice(0, 4)); yy++) years.push(yy);
+  years.forEach(function (year, i) {
+    var cls = 'life__tick' + (year < 2018 ? ' is-minor' : '') + (i === 0 ? ' is-first' : '');
+    html += '<span class="' + cls + '" style="left:' + pct(pos(year + '-01')) + '">' + year + '</span>';
   });
-  var filter = 'all';
-  var activeId = null;
-  var playTimer = null;
-  var lastWidth = 0;
 
-  var totalWeight = 0;
-  for (var y = FIRST_YEAR; y <= LAST_YEAR; y++) totalWeight += YEAR_WEIGHT[y] || 1;
+  // The line: one gradient, solid inside each era and blending across the gaps
+  var stops = [];
+  eras.forEach(function (era) {
+    var color = 'var(--c-' + era.color + ')';
+    stops.push(color + ' ' + pct(pos(era.from) / lineEnd));
+    stops.push(color + ' ' + pct(pos(era.to, 1) / lineEnd));
+  });
+  html += '<div class="life__line" style="width:' + pct(lineEnd) + ';background:linear-gradient(90deg,' + stops.join(',') + ')"></div>';
+  html += '<div class="life__future" style="left:' + pct(nowPos) + ';width:' + pct(lineEnd - nowPos) + '"></div>';
+  html += '<span class="life__now" style="left:' + pct(nowPos) + '" title="Now"></span>';
 
-  // Position along the timeline from 0 to 1. monthPart runs from 0 (1 Jan) to 1 (31 Dec).
-  function position(year, monthPart) {
-    year = Math.max(FIRST_YEAR, Math.min(LAST_YEAR, year));
-    var before = 0;
-    for (var yy = FIRST_YEAR; yy < year; yy++) before += YEAR_WEIGHT[yy] || 1;
-    return (before + (YEAR_WEIGHT[year] || 1) * monthPart) / totalWeight;
+  eras.forEach(function (era) {
+    if (!era.parts) return;
+    var a = pos(era.from);
+    var b = pos(era.to, 1);
+    var delay = ((a + b) / 2 / lineEnd * DRAW_SECONDS).toFixed(2) + 's';
+    html += '<button type="button" class="life__era" data-era="' + era.id + '" data-color="' + era.color + '"' +
+      ' style="left:' + pct(a) + ';width:' + pct(b - a) + '"' +
+      ' aria-label="' + esc(era.title + ', ' + era.years + '. Show what happened') + '"></button>';
+    html += '<span class="life__label" data-color="' + era.color + '" style="left:' + pct((a + b) / 2) + ';--delay:' + delay + '">' + esc(era.label) + '</span>';
+  });
+
+  data.milestones.forEach(function (m, i) {
+    var at = pos(m.date, 0.5);
+    var delay = (at / lineEnd * DRAW_SECONDS).toFixed(2) + 's';
+    html += '<button type="button" class="life__mile" data-mile="' + i + '" style="left:' + pct(at) + ';--delay:' + delay + '" aria-label="' + esc(m.label + ': ' + m.title) + '"></button>';
+  });
+
+  html += '<div class="life__parts" id="life-parts"></div></div>';
+  view.innerHTML = html;
+
+  var track = document.getElementById('life-track');
+  var partsBox = document.getElementById('life-parts');
+
+  // ---- Milestone tooltip: lives outside the clipped view so it is never cut off ----
+  var tip = document.createElement('div');
+  tip.className = 'life__tip';
+  tip.setAttribute('aria-hidden', 'true');
+  life.appendChild(tip);
+
+  function showTip(btn) {
+    var m = data.milestones[Number(btn.getAttribute('data-mile'))];
+    tip.innerHTML = '<b>' + esc(m.label) + '</b>' + esc(m.title);
+    var lifeBox = life.getBoundingClientRect();
+    var box = btn.getBoundingClientRect();
+    var centre = box.left + box.width / 2 - lifeBox.left;
+    var half = tip.offsetWidth / 2;
+    tip.style.left = Math.max(half + 8, Math.min(lifeBox.width - half - 8, centre)) + 'px';
+    tip.style.top = (box.top - lifeBox.top - 10) + 'px';
+    tip.classList.add('is-shown');
   }
-  function startPos(value) { var d = Site.parse(value); return position(d.y, (d.m - 1) / 12); }
-  function endPos(value) { var d = Site.parse(value); return position(d.y, d.m / 12); }
+  function hideTip() { tip.classList.remove('is-shown'); }
+
+  view.addEventListener('mouseover', function (e) {
+    var btn = e.target.closest('.life__mile');
+    if (btn) showTip(btn);
+  });
+  view.addEventListener('mouseout', function (e) {
+    if (e.target.closest('.life__mile')) hideTip();
+  });
+  view.addEventListener('focusin', function (e) {
+    var btn = e.target.closest('.life__mile');
+    if (btn) showTip(btn);
+  });
+  view.addEventListener('focusout', hideTip);
+
+  // ---- Zooming ----
+  function setRange(from, to) {
+    var zoom = 1 / (to - from);
+    track.style.width = (zoom * 100) + '%';
+    track.style.left = (-from * zoom * 100) + '%';
+    return zoom;
+  }
 
   var measureCtx = document.createElement('canvas').getContext('2d');
   function textWidth(text) {
@@ -133,312 +312,95 @@ var Timeline = (function () {
     return Math.ceil(measureCtx.measureText(text).width) + 4;
   }
 
-  function visible() {
-    return entries.filter(function (e) { return filter === 'all' || Site.group(e) === filter; });
+  // Lay the era's parts out in rows under the line, in pixels at the zoomed scale
+  function renderParts(era, zoom) {
+    var trackPx = view.clientWidth * zoom;
+    var rowEnds = [];
+    var items = era.parts.slice().sort(function (p, q) { return pos(p.start) - pos(q.start); });
+
+    partsBox.innerHTML = items.map(function (p) {
+      var name = p.short || p.title;
+      var isPoint = !p.end;
+      var x0 = (isPoint ? pos(p.start, 0.5) : pos(p.start)) * trackPx;
+      var barW = isPoint ? 0 : Math.max((pos(p.end, 1) - pos(p.start)) * trackPx, 8);
+      var nameW = textWidth(name);
+      var inside = !isPoint && barW >= nameW + 16;
+      var markLeft = isPoint ? x0 - 5.5 : x0;
+      var markRight = isPoint ? x0 + 5.5 : x0 + barW;
+      var flip = !inside && markRight + 6 + nameW > trackPx;
+
+      var from = flip ? markLeft - 6 - nameW : markLeft;
+      var to = inside || flip ? markRight : markRight + 6 + nameW;
+      var row = 0;
+      while (row < rowEnds.length && rowEnds[row] + 10 > from) row++;
+      rowEnds[row] = to;
+
+      var cls = 'life__part' + (isPoint ? ' is-point' : '') + (inside ? ' is-inside' : '') + (flip ? ' is-flip' : '');
+      var left = flip ? markRight : markLeft;
+      return '<button type="button" class="' + cls + '" data-kind="' + p.kind + '"' + (p.open ? ' data-open="' + p.open + '"' : '') +
+        ' style="left:' + left + 'px;top:' + (row * ROW) + 'px;--w:' + barW + 'px" title="' + esc(p.title) + '">' +
+        '<span class="mark" aria-hidden="true"></span><span class="txt">' + esc(name) + '</span></button>';
+    }).join('');
+
+    view.style.height = (BASE_HEIGHT + rowEnds.length * ROW + 10) + 'px';
   }
 
-  function render() {
-    var labelWidth = parseInt(getComputedStyle(root).getPropertyValue('--tl-label'), 10) || 124;
-    var trackWidth = Math.max(root.clientWidth - labelWidth, 900);
-    lastWidth = root.clientWidth;
-
-    var html = '<div class="tl__inner" style="width:' + (labelWidth + trackWidth) + 'px">';
-
-    // Year ruler
-    var now = Site.parse('now');
-    html += '<div class="tl__axis" style="margin-left:' + labelWidth + 'px">';
-    for (var y = FIRST_YEAR; y <= LAST_YEAR; y++) {
-      var left = position(y, 0) * trackWidth;
-      var width = (YEAR_WEIGHT[y] || 1) / totalWeight * trackWidth;
-      html += '<span class="tl__year' + (y === now.y ? ' is-now' : '') + '" style="left:' + left + 'px;width:' + width + 'px">' + y + '</span>';
-    }
-    html += '</div>';
-
-    // Year lines and the "today" line behind the lanes
-    var nowX = position(now.y, (now.m - 0.5) / 12) * trackWidth;
-    html += '<div class="tl__grid" style="left:' + labelWidth + 'px;width:' + trackWidth + 'px">';
-    for (var g = FIRST_YEAR + 1; g <= LAST_YEAR; g++) {
-      html += '<span class="tl__gl" style="left:' + (position(g, 0) * trackWidth) + 'px"></span>';
-    }
-    html += '<span class="tl__now" style="left:' + nowX + 'px"><span>Today</span></span></div>';
-
-    window.LANES.forEach(function (lane) {
-      var laneEntries = entries.filter(function (e) { return e.lane === lane.id; });
-      var rowEnds = [];
-      var items = '';
-
-      laneEntries.forEach(function (e) {
-        var name = e.short || e.title;
-        var isPoint = !e.end;
-        var x0 = startPos(e.start) * trackWidth;
-        if (isPoint) x0 = position(Site.parse(e.start).y, (Site.parse(e.start).m - 0.5) / 12) * trackWidth;
-        var barWidth = isPoint ? 0 : Math.max(endPos(e.end) - startPos(e.start), 0) * trackWidth;
-        barWidth = Math.max(barWidth, 8);
-        var nameWidth = textWidth(name);
-        var inside = !isPoint && barWidth >= nameWidth + 16;
-
-        var markLeft = isPoint ? x0 - 6 : x0;
-        var markRight = isPoint ? x0 + 6 : x0 + barWidth;
-        // Near the right edge the label goes before the bar instead of after it
-        var flip = !inside && markRight + 6 + nameWidth > trackWidth;
-
-        // Pack into the first row where this item (and its label) fits
-        var from = flip ? markLeft - 6 - nameWidth : markLeft;
-        var to = inside || flip ? markRight : markRight + 6 + nameWidth;
-        var row = 0;
-        while (row < rowEnds.length && rowEnds[row] + 8 > from) row++;
-        rowEnds[row] = to;
-
-        var cls = 'tl__item ' + (isPoint ? 'tl__item--point' : 'tl__item--bar') +
-          (inside ? ' tl__item--inside' : '') + (flip ? ' tl__item--flip' : '');
-        if (e.id === activeId) cls += ' is-active';
-        var place = flip ? 'left:' + markRight + 'px' : 'left:' + markLeft + 'px';
-        items += '<button type="button" class="' + cls + '" data-id="' + e.id + '" data-group="' + lane.group + '"' +
-          ' data-lane="' + lane.id + '"' +
-          ' style="' + place + ';top:' + (row * ROW) + 'px;--w:' + barWidth + 'px"' +
-          ' title="' + Site.esc(e.title + ' · ' + Site.dateText(e)) + '">' +
-          '<span class="tl__mark" aria-hidden="true"></span><span class="tl__label">' + Site.esc(name) + '</span></button>';
-      });
-
-      var rows = Math.max(rowEnds.length, 1);
-      html += '<div class="tl__lane" data-group="' + lane.group + '">' +
-        '<div class="tl__lane-label" data-lane="' + lane.id + '">' + Site.esc(lane.label) + '</div>' +
-        '<div class="tl__track" style="width:' + trackWidth + 'px;height:' + (rows * ROW) + 'px">' + items + '</div></div>';
+  function zoomTo(era) {
+    openEra = era;
+    var a = pos(era.from);
+    var b = pos(era.to, 1);
+    var pad = (b - a) * 0.06;
+    var zoom = setRange(Math.max(0, a - pad), Math.min(1, b + pad));
+    renderParts(era, zoom);
+    partsBox.classList.add('is-shown');
+    view.querySelectorAll('.life__era').forEach(function (btn) {
+      btn.classList.toggle('is-open', btn.getAttribute('data-era') === era.id);
     });
-
-    html += '</div>';
-    root.innerHTML = html;
+    hint.textContent = era.title + ' · ' + era.years;
+    backBtn.hidden = false;
   }
 
-  function renderDetail(entry) {
-    var lane = Site.lane(entry);
-    var seq = visible();
-    var index = seq.indexOf(entry);
-    var images = entry.images || [];
-
-    var more = '';
-    if (Site.hasCard(entry)) more = '<a class="tl-detail__jump" href="#p-' + entry.id + '">See project card ↓</a>';
-    else if (entry.anchor) more = '<a class="tl-detail__jump" href="' + entry.anchor + '">Read more ↓</a>';
-
-    var media = '';
-    if (images.length) {
-      media = '<div class="tl-detail__media">' + images.map(function (src, i) {
-        return '<img src="' + Site.esc(src) + '" alt="' + Site.esc(entry.title + (images.length > 1 ? ' (' + (i + 1) + ')' : '')) + '" loading="lazy">';
-      }).join('') + '</div>';
-    }
-
-    detail.innerHTML =
-      '<article class="tl-detail__card' + (media ? ' has-media' : '') + '" data-group="' + lane.group + '" data-lane="' + lane.id + '">' +
-        '<div class="tl-detail__text">' +
-          '<div class="tl-detail__meta"><span class="badge">' + Site.esc(lane.label) + '</span>' +
-          '<span class="tl-detail__date">' + Site.esc(Site.dateText(entry)) + '</span>' +
-          (index >= 0 ? '<span class="tl-detail__count">' + (index + 1) + ' / ' + seq.length + '</span>' : '') + '</div>' +
-          '<h3>' + Site.esc(entry.title) + '</h3>' +
-          (entry.sub ? '<p class="tl-detail__sub">' + Site.esc(entry.sub) + '</p>' : '') +
-          '<p>' + Site.esc(entry.text) + '</p>' +
-          Site.tagsHtml(entry) +
-          '<p class="tl-detail__links">' + Site.linksHtml(entry) + more + '</p>' +
-        '</div>' + media +
-      '</article>';
+  function zoomOut() {
+    if (!openEra) return;
+    openEra = null;
+    setRange(0, 1);
+    partsBox.classList.remove('is-shown');
+    view.style.height = BASE_HEIGHT + 'px';
+    view.querySelectorAll('.life__era').forEach(function (btn) { btn.classList.remove('is-open'); });
+    hint.textContent = 'Click a section of the line to look inside it.';
+    backBtn.hidden = true;
+    setTimeout(function () { if (!openEra) partsBox.innerHTML = ''; }, 450);
   }
 
-  function select(id, smooth, keepDetail) {
-    var entry = entries.filter(function (e) { return e.id === id; })[0];
-    if (!entry) return;
-    activeId = id;
-
-    root.querySelectorAll('.tl__item').forEach(function (el) {
-      el.classList.toggle('is-active', el.getAttribute('data-id') === id);
-    });
-    if (!keepDetail) renderDetail(entry);
-
-    // Keep the selected item in view inside the timeline (does not scroll the page)
-    var item = root.querySelector('.tl__item[data-id="' + id + '"]');
-    if (item) {
-      var labelWidth = parseInt(getComputedStyle(root).getPropertyValue('--tl-label'), 10) || 124;
-      var target = item.offsetLeft + labelWidth - root.clientWidth / 2;
-      root.scrollTo({ left: Math.max(target, 0), behavior: smooth ? 'smooth' : 'auto' });
-    }
-  }
-
-  function step(direction) {
-    var seq = visible();
-    if (!seq.length) return;
-    var index = seq.map(function (e) { return e.id; }).indexOf(activeId);
-    var next = index === -1 ? 0 : index + direction;
-    if (next < 0) next = seq.length - 1;
-    if (next >= seq.length) { stop(); return; }
-    select(seq[next].id, true);
-  }
-
-  function play() {
-    var seq = visible();
-    var index = seq.map(function (e) { return e.id; }).indexOf(activeId);
-    if (index === -1 || index === seq.length - 1) select(seq[0].id, true);
-    playTimer = setInterval(function () { step(1); }, 2800);
-    playBtn.setAttribute('aria-pressed', 'true');
-    playBtn.querySelector('span').textContent = 'Pause';
-    root.classList.add('is-playing');
-  }
-
-  function stop() {
-    clearInterval(playTimer);
-    playTimer = null;
-    playBtn.setAttribute('aria-pressed', 'false');
-    playBtn.querySelector('span').textContent = 'Play';
-    root.classList.remove('is-playing');
-  }
-
-  function setFilter(value) {
-    filter = value;
-    root.setAttribute('data-filter', value);
-    document.querySelectorAll('#tl-filters .chip').forEach(function (chip) {
-      chip.setAttribute('aria-pressed', String(chip.getAttribute('data-filter') === value));
-    });
-    var seq = visible();
-    var stillVisible = seq.some(function (e) { return e.id === activeId; });
-    if (seq.length) select(stillVisible ? activeId : seq[0].id, true);
-  }
-
-  // ---- Events ----
-  root.addEventListener('click', function (e) {
-    var item = e.target.closest('.tl__item');
-    if (!item) return;
-    stop();
-    var group = item.getAttribute('data-group');
-    if (filter !== 'all' && group !== filter) setFilter('all');
-    select(item.getAttribute('data-id'), true);
+  view.addEventListener('click', function (e) {
+    var mile = e.target.closest('.life__mile');
+    if (mile) { showTip(mile); return; }   // tap on touch screens
+    var btn = e.target.closest('.life__era');
+    if (!btn || btn.classList.contains('is-open')) return;
+    var era = eras.filter(function (x) { return x.id === btn.getAttribute('data-era'); })[0];
+    if (era) zoomTo(era);
   });
+  backBtn.addEventListener('click', zoomOut);
+  life.addEventListener('keydown', function (e) { if (e.key === 'Escape') zoomOut(); });
 
-  root.addEventListener('keydown', function (e) {
-    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
-      e.preventDefault();
-      stop();
-      step(e.key === 'ArrowRight' ? 1 : -1);
-    }
-  });
-
-  document.getElementById('tl-prev').addEventListener('click', function () { stop(); step(-1); });
-  document.getElementById('tl-next').addEventListener('click', function () { stop(); step(1); });
-  playBtn.addEventListener('click', function () { if (playTimer) stop(); else play(); });
-
-  document.getElementById('tl-filters').addEventListener('click', function (e) {
-    var chip = e.target.closest('.chip');
-    if (chip) { stop(); setFilter(chip.getAttribute('data-filter')); }
-  });
-
-  var resizeTimer = null;
+  var resizeTimer = 0;
   window.addEventListener('resize', function () {
     clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(function () {
-      if (root.clientWidth !== lastWidth) { render(); select(activeId, false, true); }
-    }, 150);
+    resizeTimer = setTimeout(function () { if (openEra) zoomTo(openEra); }, 150);
   });
 
-  // ---- Start: show the thesis, the thing I'm working on now ----
-  root.setAttribute('data-filter', 'all');
-  render();
-  select('thesis', false);
-  if (document.fonts && document.fonts.ready) {
-    document.fonts.ready.then(function () { render(); select(activeId, false, true); });
-  }
-
-  return {
-    show: function (id) {
-      stop();
-      if (filter !== 'all') setFilter('all');
-      select(id, true);
-      document.getElementById('journey').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  };
-})();
-
-// ---------- Project cards ----------
-(function () {
-  var grid = document.getElementById('project-grid');
-  if (!grid || !window.ENTRIES) return;
-
-  // Newest (or still running) first
-  var projects = window.ENTRIES.filter(Site.hasCard).sort(function (a, b) {
-    return Site.sortValue(b.end || b.start) - Site.sortValue(a.end || a.start);
-  });
-
-  grid.innerHTML = projects.map(function (p) {
-    var lane = Site.lane(p);
-    var cover = p.images && p.images.length
-      ? '<div class="card__img"><img src="' + Site.esc(p.images[0]) + '" alt="' + Site.esc(p.title) + '" loading="lazy"></div>'
-      : '';
-    return '<article class="card reveal" id="p-' + p.id + '" data-lane="' + p.lane + '">' + cover +
-      '<p class="kicker">' + Site.esc(lane.label) + ' · ' + Site.esc(Site.dateText(p)) + '</p>' +
-      '<h3>' + Site.esc(p.title) + '</h3>' +
-      (p.sub ? '<p class="card__sub">' + Site.esc(p.sub) + '</p>' : '') +
-      '<p>' + Site.esc(p.text) + '</p>' +
-      Site.tagsHtml(p) +
-      '<p class="card__links">' + Site.linksHtml(p) +
-      '<button type="button" class="card__tl" data-id="' + p.id + '">On the timeline ↑</button></p>' +
-    '</article>';
-  }).join('');
-
-  grid.addEventListener('click', function (e) {
-    var btn = e.target.closest('.card__tl');
-    if (btn && Timeline) Timeline.show(btn.getAttribute('data-id'));
-  });
-
-  var chips = document.querySelectorAll('#project-filters .chip');
-  function setFilter(value) {
-    chips.forEach(function (chip) {
-      chip.setAttribute('aria-pressed', String(chip.getAttribute('data-filter') === value));
-    });
-    grid.querySelectorAll('.card').forEach(function (card) {
-      card.hidden = value !== 'all' && card.getAttribute('data-lane') !== value;
-    });
-  }
-  document.getElementById('project-filters').addEventListener('click', function (e) {
-    var chip = e.target.closest('.chip');
-    if (chip) setFilter(chip.getAttribute('data-filter'));
-  });
-
-  // "See project card" from the timeline: make sure the card is showing, then flash it
-  document.addEventListener('click', function (e) {
-    var link = e.target.closest('a[href^="#p-"]');
-    if (!link) return;
-    var card = document.getElementById(link.getAttribute('href').slice(1));
-    if (!card) return;
-    if (card.hidden) setFilter('all');
-    card.classList.add('in');
-    card.classList.remove('is-flash');
-    void card.offsetWidth;
-    card.classList.add('is-flash');
-  });
-})();
-
-// Fade sections in as they scroll into view, and highlight the active nav link
-(function () {
-  if (!('IntersectionObserver' in window)) {
-    document.querySelectorAll('.reveal').forEach(function (el) { el.classList.add('in'); });
-    return;
-  }
-
-  var revealer = new IntersectionObserver(function (entries) {
-    entries.forEach(function (entry) {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('in');
-        revealer.unobserve(entry.target);
+  // Draw the line from 2000 onwards the first time it comes into view
+  if ('IntersectionObserver' in window && !reduceMotion) {
+    var drawer = new IntersectionObserver(function (entries) {
+      if (entries[0].isIntersecting) {
+        life.classList.add('is-drawn');
+        drawer.disconnect();
       }
-    });
-  }, { rootMargin: '0px 0px -8% 0px' });
-  document.querySelectorAll('.reveal').forEach(function (el) { revealer.observe(el); });
-
-  var navLinks = document.querySelectorAll('.nav__links a');
-  var spy = new IntersectionObserver(function (entries) {
-    entries.forEach(function (entry) {
-      if (!entry.isIntersecting) return;
-      navLinks.forEach(function (a) {
-        a.classList.toggle('active', a.getAttribute('href') === '#' + entry.target.id);
-      });
-    });
-  }, { rootMargin: '-45% 0px -50% 0px' });
-  document.querySelectorAll('main section[id]').forEach(function (s) { spy.observe(s); });
+    }, { threshold: 0.4 });
+    drawer.observe(life);
+  } else {
+    life.classList.add('is-drawn');
+  }
 })();
 
 document.getElementById('year').textContent = new Date().getFullYear();
