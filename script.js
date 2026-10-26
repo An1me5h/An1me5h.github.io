@@ -127,11 +127,11 @@ var Tiles = (function () {
     }).join('');
   });
 
-  // Stagger the entrance animation down the page
+  // Stagger the entrance animation down the page (the timeline comes first)
+  document.getElementById('life').style.setProperty('--i', 0);
   document.querySelectorAll('#profile .tile').forEach(function (el, i) {
-    el.style.setProperty('--i', Math.min(i, 16));
+    el.style.setProperty('--i', Math.min(i + 1, 16));
   });
-  document.getElementById('life').style.setProperty('--i', 17);
 
   function open(id) {
     var t = byId[id];
@@ -257,7 +257,7 @@ var Tiles = (function () {
   data.milestones.forEach(function (m, i) {
     var at = pos(m.date, 0.5);
     var delay = (at / lineEnd * DRAW_SECONDS).toFixed(2) + 's';
-    html += '<button type="button" class="life__mile" data-mile="' + i + '" style="left:' + pct(at) + ';--delay:' + delay + '" aria-label="' + esc(m.label + ': ' + m.title) + '"></button>';
+    html += '<button type="button" class="life__mile" data-mile="' + i + '" style="left:' + pct(at) + ';--delay:' + delay + '" aria-label="' + esc(m.type + ': ' + m.title + '. ' + m.meta) + '"></button>';
   });
 
   html += '<div class="life__parts" id="life-parts"></div></div>';
@@ -274,7 +274,10 @@ var Tiles = (function () {
 
   function showTip(btn) {
     var m = data.milestones[Number(btn.getAttribute('data-mile'))];
-    tip.innerHTML = '<b>' + esc(m.label) + '</b>' + esc(m.title);
+    tip.innerHTML =
+      '<span class="tip__type">' + esc(m.type) + '</span>' +
+      '<span class="tip__title">' + esc(m.title) + '</span>' +
+      '<span class="tip__meta">' + esc(m.meta) + '</span>';
     var lifeBox = life.getBoundingClientRect();
     var box = btn.getBoundingClientRect();
     var centre = box.left + box.width / 2 - lifeBox.left;
@@ -367,7 +370,7 @@ var Tiles = (function () {
     partsBox.classList.remove('is-shown');
     view.style.height = BASE_HEIGHT + 'px';
     view.querySelectorAll('.life__era').forEach(function (btn) { btn.classList.remove('is-open'); });
-    hint.textContent = 'Click a section of the line to look inside it.';
+    hint.textContent = '';
     backBtn.hidden = true;
     setTimeout(function () { if (!openEra) partsBox.innerHTML = ''; }, 450);
   }

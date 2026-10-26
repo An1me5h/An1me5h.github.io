@@ -12,7 +12,7 @@ window.TIMELINE = {
     { id: 'early', from: '2000-01', to: '2018-07', color: 'neutral' },
     {
       id: 'bachelor', from: '2018-08', to: '2022-06', color: 'study',
-      label: 'B.E. · Nagpur', title: 'Bachelor years', years: '2018 – 2022',
+      label: 'B.E. Mechanical', title: 'B.E. Mechanical Engineering', years: '2018 – 2022',
       parts: [
         { title: 'B.E. Mechanical Engineering', start: '2018-08', end: '2022-06', kind: 'study', open: 'rcoem' },
         { title: 'SAE E-Baja Team Lead', start: '2019-06', end: '2022-06', kind: 'team', open: 'sae' },
@@ -24,7 +24,7 @@ window.TIMELINE = {
     },
     {
       id: 'mahindra', from: '2022-08', to: '2024-04', color: 'work',
-      label: 'Mahindra', title: 'Mahindra & Mahindra', years: '2022 – 2024',
+      label: 'Mahindra · Automotive R&D', title: 'Mahindra & Mahindra · Automotive R&D', years: '2022 – 2024',
       parts: [
         { title: 'Graduate Engineer Trainee', start: '2022-08', end: '2022-12', kind: 'work', open: 'mahindra' },
         { title: 'Assistant Manager – Product Development', start: '2023-01', end: '2024-04', kind: 'work', open: 'mahindra' }
@@ -32,7 +32,7 @@ window.TIMELINE = {
     },
     {
       id: 'masters', from: '2024-10', to: '2027-03', color: 'study',
-      label: 'M.Eng. · Ingolstadt', title: 'Master\'s in Germany', years: '2024 – 2027',
+      label: 'M.Eng. · Germany', title: 'M.Eng. in Germany', years: '2024 – 2027',
       parts: [
         { title: 'M.Eng. Automotive Production Engineering', start: '2024-10', end: '2027-03', kind: 'study', open: 'thi' }
       ]
@@ -41,9 +41,9 @@ window.TIMELINE = {
 
   // Shown as dots on the line, with the text only on hover
   milestones: [
-    { date: '2021-03', label: '2021', title: 'Patent granted: A Device for Generating Profiles on Pipes (Indian Patent No. 484900)' },
-    { date: '2021-09', label: '2021', title: 'Patent granted: A Device for Making Flower Garlands (Indian Patent No. 414916)' },
-    { date: '2022-03', label: '2022', title: 'Published: Design & Analysis of an ATV Suspension System using LOTUS, ARAI Journal of Mobility and Technology' }
+    { date: '2021-03', type: 'Patent · granted', title: 'A Device for Generating Profiles on Pipes', meta: 'Indian Patent No. 484900 · 2021' },
+    { date: '2021-09', type: 'Patent · granted', title: 'A Device for Making Flower Garlands', meta: 'Indian Patent No. 414916 · 2021' },
+    { date: '2022-03', type: 'Journal publication', title: 'Design & Analysis of an ATV Suspension System using LOTUS', meta: 'ARAI Journal of Mobility and Technology · 2022' }
   ]
 };
 
@@ -103,8 +103,9 @@ window.TILES = [
       { when: '2018', title: 'Started B.E. Mechanical Engineering', text: 'Shri Ramdeobaba College of Engineering and Management, Nagpur.' },
       { when: '2019', title: 'Joined SAE E-Baja · Trident Racing', text: 'Later led the team.', open: 'sae' },
       { when: '2020', title: 'Honours in Mechanical Engineering', text: 'Digital manufacturing, turbomachinery, tribology, heat exchanger design and tool design.' },
-      { when: '2021', title: 'Two patents granted', text: '"A Device for Generating Profiles on Pipes" (Indian Patent No. 484900) and "A Device for Making Flower Garlands" (Indian Patent No. 414916).' },
-      { when: '2022', title: 'Journal paper', text: '"Design & Analysis of an ATV Suspension System using LOTUS", ARAI Journal of Mobility and Technology.' },
+      { when: '2021 · Patent granted', title: 'A Device for Generating Profiles on Pipes', text: 'Indian Patent No. 484900' },
+      { when: '2021 · Patent granted', title: 'A Device for Making Flower Garlands', text: 'Indian Patent No. 414916' },
+      { when: '2022 · Journal publication', title: 'Design & Analysis of an ATV Suspension System using LOTUS', text: 'ARAI Journal of Mobility and Technology' },
       { when: '2022', title: 'Thesis: Wire Arc Additive Manufacturing', text: '"Strength assessment of parts manufactured by Wire Arc Additive Manufacturing." Trials with a Yaskawa AR1440 6-axis robot on process parameters, deposition behaviour, bead geometry and defects.' }
     ]
   },

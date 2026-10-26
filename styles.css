@@ -150,6 +150,13 @@ button { font: inherit; color: inherit; }
     0 12px 48px rgba(0, 0, 0, 0.16),
     inset 0 1px 0 color-mix(in srgb, #ffffff 30%, transparent);
   transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+}
+
+/* Only the text morphs, not the glass card. Both names share font, spacing and
+   line height, so the two snapshots have the same shape and line up exactly. */
+.intro__text, .profile__text {
+  display: inline-block; white-space: nowrap;
+  font-family: var(--font-head); font-weight: 700; line-height: 1.05; letter-spacing: -0.035em;
   view-transition-name: hero-name;
 }
 .intro__name:hover, .intro__name:focus-visible {
@@ -180,8 +187,6 @@ button { font: inherit; color: inherit; }
   animation-timing-function: cubic-bezier(.65, 0, .25, 1);
 }
 ::view-transition-old(hero-name), ::view-transition-new(hero-name) {
-  height: 100%;
-  object-fit: contain;
   animation-duration: .85s;
 }
 ::view-transition-old(root) { animation: vt-out .4s ease both; }
@@ -204,10 +209,7 @@ button { font: inherit; color: inherit; }
   width: 88px; height: 88px; border-radius: 50%; object-fit: cover; flex: none;
   border: 3px solid var(--surface); box-shadow: 0 0 0 1px var(--line), var(--shadow);
 }
-.profile__name {
-  font-size: clamp(30px, 5vw, 52px); letter-spacing: -0.03em; line-height: 1.05;
-  view-transition-name: hero-name; width: fit-content;
-}
+.profile__name { font-size: clamp(30px, 5vw, 52px); line-height: 1.05; }
 .top__role { margin: 6px 0 0; color: var(--muted); font-size: 15px; }
 .top__actions { display: flex; gap: 8px; }
 
@@ -220,7 +222,6 @@ button { font: inherit; color: inherit; }
 
 /* ---------- Page sections ---------- */
 .block { margin-top: 44px; }
-.block:first-child { margin-top: 8px; }
 .block__title { font-size: 24px; letter-spacing: -0.02em; margin-bottom: 16px; }
 .block__intro { color: var(--muted); margin: -8px 0 18px; max-width: 64ch; }
 
@@ -303,7 +304,7 @@ button.tile:hover, button.tile:focus-visible {
 }
 
 /* ---------- Life timeline ---------- */
-.life { position: relative; margin: 56px 0 24px; padding: 24px 24px 18px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+.life { position: relative; margin: 0 0 8px; padding: 24px 24px 18px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
 .life__head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px; margin-bottom: 8px; }
 .life__head h2 { font-size: 22px; letter-spacing: -0.01em; }
 .life__hint { margin: 0; color: var(--muted); font-size: 14px; }
@@ -379,12 +380,18 @@ button.tile:hover, button.tile:focus-visible {
 .life__mile:hover::before, .life__mile:focus-visible::before { transform: rotate(45deg) scale(1.35); }
 .life__tip {
   position: absolute; z-index: 5; transform: translate(-50%, calc(-100% + 4px));
-  width: max-content; max-width: 280px; padding: 9px 12px; border-radius: 10px;
-  background: var(--text); color: var(--bg); font: 500 12.5px/1.45 var(--font-body);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, .25);
+  width: max-content; max-width: 300px; padding: 12px 14px; border-radius: 12px;
+  background: var(--surface); color: var(--text); text-align: left;
+  border: 1px solid var(--line); border-top: 3px solid var(--c-milestone);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, .28);
   opacity: 0; pointer-events: none; transition: opacity .15s, transform .15s;
 }
-.life__tip b { display: block; font: 500 11px var(--font-mono); opacity: .7; margin-bottom: 2px; }
+.tip__type {
+  display: block; margin-bottom: 4px;
+  font: 500 11px var(--font-mono); letter-spacing: .05em; text-transform: uppercase; color: var(--c-milestone);
+}
+.tip__title { display: block; font: 600 14.5px/1.35 var(--font-head); }
+.tip__meta { display: block; margin-top: 6px; font-size: 12.5px; color: var(--muted); }
 .life__tip.is-shown { opacity: 1; transform: translate(-50%, -100%); }
 
 .life__parts { position: absolute; left: 0; right: 0; top: 96px; opacity: 0; transition: opacity .4s; }

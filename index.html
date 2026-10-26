@@ -30,7 +30,7 @@
   <!-- Intro screen (animated by intro.js) -->
   <section class="intro" id="intro" aria-label="Animesh Hedaoo">
     <canvas class="intro__canvas" aria-hidden="true"></canvas>
-    <a class="intro__name" id="enter" href="#profile" aria-label="Animesh Hedaoo. Enter the site">Animesh Hedaoo</a>
+    <a class="intro__name" id="enter" href="#profile" aria-label="Animesh Hedaoo. Enter the site"><span class="intro__text">Animesh Hedaoo</span></a>
     <button type="button" class="intro__sound" id="intro-sound" aria-pressed="false" aria-label="Turn sound on">
       <svg class="i-sound-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5L6 9H3v6h3l5 4zM22 9l-6 6M16 9l6 6"/></svg>
       <svg class="i-sound-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5L6 9H3v6h3l5 4zM15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>
@@ -43,8 +43,8 @@
       <div class="top__id">
         <img class="top__photo" src="images/me.jpg" alt="Portrait of Animesh Hedaoo" width="96" height="96">
         <div>
-          <h1 class="profile__name">Animesh Hedaoo</h1>
-          <p class="top__role">Automotive Production Engineering · Ingolstadt, Germany</p>
+          <h1 class="profile__name"><span class="profile__text">Animesh Hedaoo</span></h1>
+          <p class="top__role">Ingolstadt, Germany</p>
         </div>
       </div>
       <div class="top__actions">
@@ -65,6 +65,16 @@
     </header>
 
     <main class="wrap">
+      <!-- Life timeline (built by script.js from data.js) -->
+      <section class="life" id="life" aria-labelledby="life-title">
+        <div class="life__head">
+          <h2 id="life-title">Timeline</h2>
+          <p class="life__hint" id="life-hint"></p>
+          <button type="button" class="life__back" id="life-back" hidden>← Whole timeline</button>
+        </div>
+        <div class="life__view" id="life-view"></div>
+      </section>
+
       <!-- Skills & software -->
       <section class="block" aria-labelledby="skills-title">
         <h2 class="block__title" id="skills-title">Skills &amp; software</h2>
@@ -104,7 +114,7 @@
 
       <section class="block" aria-labelledby="pm-title">
         <h2 class="block__title" id="pm-title">Project management</h2>
-        <p class="block__intro">Four case studies from Mahindra, each told as challenge, approach and result. Click one to read it.</p>
+        <p class="block__intro">Four case studies from Mahindra, each told as challenge, approach and result.</p>
         <ul class="stats" aria-label="At a glance">
           <li><strong>~150</strong><span>parts handled</span></li>
           <li><strong>~20</strong><span>suppliers coordinated</span></li>
@@ -121,16 +131,6 @@
       <section class="block" aria-labelledby="projects-title">
         <h2 class="block__title" id="projects-title">Projects</h2>
         <div class="bento" data-group="projects"></div>
-      </section>
-
-      <!-- Life timeline (built by script.js from data.js) -->
-      <section class="life" id="life" aria-labelledby="life-title">
-        <div class="life__head">
-          <h2 id="life-title">Timeline</h2>
-          <p class="life__hint" id="life-hint">Click a section of the line to look inside it.</p>
-          <button type="button" class="life__back" id="life-back" hidden>← Whole timeline</button>
-        </div>
-        <div class="life__view" id="life-view"></div>
       </section>
     </main>
 
