@@ -64,7 +64,7 @@ window.TILES = [
     facts: [
       { k: 'Roles', v: 'Graduate Engineer Trainee → Assistant Manager – Product Development' },
       { k: 'Platforms', v: 'BE6 and BE9e electric SUVs' },
-      { k: 'Scope', v: '~150 parts, 11 suppliers' }
+      { k: 'Scope', v: '~150 parts, ~20 suppliers' }
     ],
     story: [
       { when: 'Aug 2022', title: 'Graduate Engineer Trainee', text: 'Joined product development for Mahindra\'s electric vehicle programmes.' },
@@ -155,11 +155,11 @@ window.TILES = [
     id: 'pm-builds', group: 'pm', span: 1, color: 'work', icon: 'layers',
     kicker: 'Case study · Mahindra',
     title: 'Prototype builds for two EV platforms',
-    teaser: '~150 parts from 11 suppliers, kept moving through design changes for the BE6 and BE9e builds.',
+    teaser: '~150 parts from ~20 suppliers, kept moving through design changes for the BE6 and BE9e builds.',
     more: 'Read the case study',
     facts: [
       { k: 'My role', v: 'Assistant Manager – Product Development' },
-      { k: 'Scope', v: '~150 parts · 11 suppliers · BE6 & BE9e' },
+      { k: 'Scope', v: '~150 parts · ~20 suppliers · BE6 & BE9e' },
       { k: 'Team', v: 'R&D, purchasing, quality, manufacturing and suppliers, in a matrix organisation' },
       { k: 'Tools', v: 'Teamcenter, SAP, Excel/VBA, Power BI' }
     ],
